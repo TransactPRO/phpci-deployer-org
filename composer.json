@@ -1,0 +1,29 @@
+{
+    "name": "transactpro/phpci-deployer-org",
+    "description": "PHPCI Plugin for deployer.org integration",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Vitalijs Litvinovs",
+            "email": "vitalijs.litvinovs@transactpro.lv"
+        }
+    ],
+    "require": {},
+    "autoload": {
+	"classmap": [ 
+	    "src/Deployer.php"
+	]
+    },
+    "extra": {
+        "phpci": {
+	    "pluginNamespace": "PHPCI\\Plugin\\",
+	    "suppliedPlugins": [
+	        {
+		    "name": "Deployer",
+		    "class": "Deployer"
+		}
+	    ]
+	}
+    }
+}
