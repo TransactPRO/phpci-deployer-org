@@ -1,119 +1,146 @@
 <?php
 /**
- * PHPCI - Continuous Integration for PHP
+ * Deployer plugin for PHPCI
+ * @see http://deployer.org
  *
- * @copyright    Copyright 2014, Block 8 Limited.
- * @license      https://github.com/Block8/PHPCI/blob/master/LICENSE.md
- * @link         https://www.phptesting.org/
+ * @copyright
+ * @license MIT
+ * @license https://github.com/ket4yii/phpci-deployer-plugin/blob/master/LICENSE
+ * @link https://github.com/ket4yii/phpci-deployer-plugin
  */
 
 namespace PHPCI\Plugin;
 
 use PHPCI\Builder;
-use PHPCI\Helper\Lang;
 use PHPCI\Model\Build;
-use b8\Config;
 
-/**
- * StashBuild Plugin
- * @author       Vitalijs Litvinovs <vl@tpro.lv>
- * @package      PHPCI
- * @subpackage   Plugins
- */
-class StashBuild implements \PHPCI\Plugin
-{
-    private $authUser = null;
-    private $authToken = null;
-    private $login = null;
-    private $password = null;
-    protected $color;
-    protected $notify;
+class Deployer implements \PHPCI\Plugin {
 
-    /**
-     * Set up the plugin, configure options, etc.
-     * @param Builder $phpci
-     * @param Build $build
-     * @param array $options
-     * @throws \Exception
-     */
-    public function __construct(Builder $phpci, Build $build, array $options = array())
-    {
-        $this->phpci = $phpci;
-        $this->build = $build;
+  protected $phpci;
+  protected $build;
+  protected $config;
+  protected $dep;
+  protected $branch;
 
-        $pluginConfig = $this->phpci->getSystemConfig('stash_build');
+  /**
+   * Standard Constructor
+   *
+   * $options['directory'] Output Directory. Default: %BUILDPATH%
+   * $options['filename']  Phar Filename. Default: build.phar
+   * $options['regexp']    Regular Expression Filename Capture. Default: /\.php$/
+   * $options['stub']      Stub Content. No Default Value
+   *
+   * @param Builder $phpci   PHPCI instance
+   * @param Build   $build   Build instance
+   * @param array   $options Plugin options
+   */
+  public function __construct(
+      Builder $phpci,
+      Build $build,
+      array $options = array()
+  ) {
+    $this->phpci = $phpci;
+    $this->build = $build;
+    $this->config = $options;
 
-        $this->userAgent = "PHPCI/1.0 (+http://www.phptesting.org/)";
-        $this->cookie = "phpcicookie";
+    $this->dep = $this->phpci->findBinary('dep');
+    $this->branch = $this->build->getBranch();
+  }
 
-        $buildSettings = $phpci->getConfig('build_settings');
+  /**
+   * PHPCI plugin executor.
+   *
+   * @return bool Did plugin execute successfully
+   */
+  public function execute() {
+    $task = 'deploy'; //default task is deploy
+    $verbosity = ''; //default verbosity is normal
+    $filename = '';
 
-        if (isset($pluginConfig['auth_token'], $pluginConfig['auth_user'])) {
-            $this->authUser = $pluginConfig['auth_user'];
-            $this->authToken = $pluginConfig['auth_token'];
-        } else {
-            $this->login = $pluginConfig['login'];
-            $this->password = $pluginConfig['password'];
-        }
+    if (($validationResult = $this->validateConfig()) !== NULL) {
+      $this->phpci->log($validationResult['message']);
 
-        if (!empty($options['status'])) {
-            $this->status = $options['status'];
-        }
-
-
-        $this->url = $pluginConfig['url'] . '/rest/build-status/1.0/commits';
+      return $validationResult['successful'];
     }
 
-    /**
-     * Run the StashBuild plugin.
-     * @return bool
-     */
-    public function execute()
-    {
-        $url = $this->url . "/%COMMIT%";
-        $buildStatus = json_encode([
-            'state'       => $this->status,
-            'key'         => '%BRANCH%-%BUILD%',
-            'name'        => "%BRANCH% #%BUILD%",
-            'url'         => '%BUILD_URI%',
-            'description' => "PHPCI Build #%BUILD% for commit %SHORT_COMMIT%"
-        ]);
+    $branchConfig = $this->config[$this->branch];
 
-        if (null === $this->authToken) {
-            $authHeaders = $this->buildParams(['u' => [
-                $this->login => $this->password
-            ], 'H' => ["Content-Type" => "application/json"]]);
-        } else {
-            $authHeaders = $this->buildParams(['H' => [
-                'X-Auth-User'  => $this->authUser,
-                'X-Auth-Token' => $this->authToken,
-		'Content-Type' => "application/json"
-            ]]);
-        }
-
-        $result = $this->makeCurlPost($url, $authHeaders, $buildStatus);
-
-        return $result;
+    if (!empty($branchConfig['task'])) {
+      $task = $branchConfig['task'];
     }
 
-    private function buildParams($params)
-    {
-        $paramString = '';
-        foreach($params as $type => $array){
-            foreach($array as $k => $v){
-                $paramString .= ' -' . $type . ' "' . $k . ':' . $v . '" ';
-            }
-        }
-        return $paramString;
+    $stage = $branchConfig['stage'];
+
+    if (!empty($branchConfig['verbose'])) {
+      $verbosity = $this->getVerbosityOption($branchConfig['verbose']);
     }
 
-    private function makeCurlPost($url, $params, $data){
-        return $this->phpci->executeCommand(
-            $this->phpci->interpolate(
-                "curl -s " . $params 
-                . " -X POST " . $url 
-                . " -d '" . addslashes($data) . "'"
-            )
-        );
+    if (!empty($branchConfig['file'])) {
+      $file = '--file=' . $branchConfig['file'];
     }
+
+    $deployerCmd = "$this->dep $file $verbosity $task $stage";
+
+    return $this->phpci->executeCommand($deployerCmd);
+  }
+
+  /**
+   * Validate config.
+   *
+   * $validationRes['message'] Message to log
+   * $validationRes['successful'] Plugin status that is connected with error
+   *
+   *  @return array validation result
+   */
+  protected function validateConfig() {
+    if (empty($this->config)) {
+      return [
+        'message' => 'Can\'t find configuration for plugin!',
+        'successful' => false
+      ];
+    }
+
+    if (empty($this->config[$this->branch])) {
+      return [
+        'message' => 'There is no specified config for this branch.',
+        'successful' => true
+      ];
+    }
+
+    $branchConf = $this->config[$this->branch];
+
+    if (empty($branchConf['stage'])) {
+      return [
+        'message' => 'There is no stage for this branch',
+        'successful' => false
+      ];
+    }
+
+    return null;
+  }
+
+  /**
+   * Get verbosity flag.
+   *
+   * @param string $verbosity User defined verbosity level
+   *
+   * @return string Verbosity flag
+   */
+  protected function getVerbosityOption($verbosity) {
+    $LOG_LEVEL_ENUM = [
+      'verbose' =>'v',
+      'very verbose' => 'vv',
+      'debug' => 'vvv',
+      'quiet' => 'q'
+    ];
+
+    $verbosity = strtolower(trim($verbosity));
+    return '-vvv';
+    if ($verbosity !== 'normal') {
+      return '-' . $LOG_LEVEL_ENUM[$verbosity];
+    } else {
+      return '';
+    }
+
+  }
 }
