@@ -1,0 +1,8 @@
+build_settings:
+    verbose: true
+
+success:
+    deployer:
+        master:
+            stage: prod
+            file: /var/www/deploy/recipes/example.deploy.php
