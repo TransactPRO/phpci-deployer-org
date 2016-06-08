@@ -2,8 +2,9 @@
 
 [![SensioLabsInsight](https://insight.sensiolabs.com/projects/cf0654ee-b09e-4010-8cc0-a4f5fcdd6167/big.png)](https://insight.sensiolabs.com/projects/cf0654ee-b09e-4010-8cc0-a4f5fcdd6167)
 
-[![Latest Version](https://img.shields.io/packagist/v/transactpro/phpci-deployer-org.svg?style=flat-square)](https://github.com/transactpro/phpci-deployer-org/releases)
-[![Total Downloads](https://img.shields.io/packagist/dt/transactpro/phpci-deployer-org.svg?style=flat-square)](https://packagist.org/packages/transactpro/phpci-deployer-org)
+[![Latest Stable Version](https://poser.pugx.org/transactpro/phpci-deployer-org/version?format=flat-square)](https://packagist.org/packages/transactpro/phpci-deployer-org)
+[![Total Downloads](https://poser.pugx.org/transactpro/phpci-deployer-org/downloads?format=flat-square)](https://packagist.org/packages/transactpro/phpci-deployer-org)
+[![License](https://poser.pugx.org/transactpro/phpci-deployer-org/license?format=flat-square)](https://packagist.org/packages/transactpro/phpci-deployer-org)
 
 ## Prerequisites
 - Up and running [`deployer.org`](http://deployer.org/) tool *`dep`* and endpoint configuration done like in docs. (You can get it [here](http://deployer.org/docs/installation))
