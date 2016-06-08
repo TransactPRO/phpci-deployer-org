@@ -55,7 +55,7 @@ class Deployer implements \PHPCI\Plugin {
   public function execute() {
     $task = 'deploy'; //default task is deploy
     $verbosity = ''; //default verbosity is normal
-    $filename = '';
+    $file = '';
 
     if (($validationResult = $this->validateConfig()) !== NULL) {
       $this->phpci->log($validationResult['message']);
