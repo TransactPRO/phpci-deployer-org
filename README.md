@@ -1,5 +1,7 @@
 ###PHPCI Plugin for deployer.org integration
 
+[![SensioLabsInsight](https://insight.sensiolabs.com/projects/cf0654ee-b09e-4010-8cc0-a4f5fcdd6167/big.png)](https://insight.sensiolabs.com/projects/cf0654ee-b09e-4010-8cc0-a4f5fcdd6167)
+
 [![Latest Version](https://img.shields.io/packagist/v/transactpro/phpci-deployer-org.svg?style=flat-square)](https://github.com/transactpro/phpci-deployer-org/releases)
 [![Total Downloads](https://img.shields.io/packagist/dt/transactpro/phpci-deployer-org.svg?style=flat-square)](https://packagist.org/packages/transactpro/phpci-deployer-org)
 
