@@ -62,14 +62,18 @@ class Deployer implements \PHPCI\Plugin {
 
       return $validationResult['successful'];
     }
+    
+    if(isset($this->config[$this->branch])){
+        $branchConfig = $this->config[$this->branch];
+    }else{
+        $branchConfig = $this->config['*'];
+    }
 
-    $branchConfig = $this->config[$this->branch];
+    $stage = $branchConfig['stage'];
 
     if (!empty($branchConfig['task'])) {
       $task = $branchConfig['task'];
     }
-
-    $stage = $branchConfig['stage'];
 
     if (!empty($branchConfig['verbose'])) {
       $verbosity = $this->getVerbosityOption($branchConfig['verbose']);
@@ -79,7 +83,7 @@ class Deployer implements \PHPCI\Plugin {
       $file = '--file=' . $branchConfig['file'];
     }
 
-    $deployerCmd = "$this->dep $file $verbosity $task $stage";
+    $deployerCmd = "$this->dep $file $verbosity $task $stage --commit={$this->build->getCommitId()}";
 
     return $this->phpci->executeCommand($deployerCmd);
   }
